@@ -1,10 +1,10 @@
 import socket
 from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Cipher import AES, PKCS1_OAEP
 import os
 
 SERVER_HOST = '127.0.0.1'
-SERVER_PORT = 65433  # Make sure this matches with the client
+SERVER_PORT = 65433
 
 def main():
     # Load server's private key
@@ -18,33 +18,37 @@ def main():
 
     print(f"Server listening on {SERVER_HOST} {SERVER_PORT}...")
 
-    # Accept client connection
     client_socket, client_address = server_socket.accept()
     print(f"Client connected: {client_address}")
 
     # Receive the client's public RSA key
-    client_public_key_data = client_socket.recv(2048)
-    client_public_key = RSA.import_key(client_public_key_data)
+    client_public_key = RSA.import_key(client_socket.recv(2048))
     print("Client's public key received.")
 
-    # Generate a random AES key (32 bytes for AES-256)
+    # Generate AES key
     aes_key = os.urandom(32)
 
-    # Encrypt AES key using client's public key
-    cipher_rsa = PKCS1_OAEP.new(client_public_key)
-    encrypted_aes_key = cipher_rsa.encrypt(aes_key)
+    # Encrypt AES key with client's public key
+    rsa_cipher = PKCS1_OAEP.new(client_public_key)
+    encrypted_aes_key = rsa_cipher.encrypt(aes_key)
 
-    # Send the encrypted AES key to the client
+    # Send the encrypted AES key
     client_socket.send(encrypted_aes_key)
-    print("Encrypted AES key sent to the client.")
+    print("AES key sent.")
 
-    # Receive acknowledgment from the client
-    ack_message = client_socket.recv(1024)
-    print(f"Acknowledgment from client: {ack_message.decode()}")
+    # Encrypt a test file with AES-EAX
+    cipher_aes = AES.new(aes_key, AES.MODE_EAX)
+    nonce = cipher_aes.nonce  # Store the nonce
+    plaintext = b"This is a test file for encryption."
+    ciphertext, tag = cipher_aes.encrypt_and_digest(plaintext)
 
-    # Send a test message to the client
-    client_socket.send(b"Hello from server!")
-    print("Test message sent to client.")
+    # Send nonce first
+    client_socket.send(nonce)
+    print("Nonce sent.")
+
+    # Send encrypted file
+    client_socket.send(ciphertext)
+    print("Encrypted file sent.")
 
     client_socket.close()
 
