@@ -5,7 +5,18 @@ from Crypto.Cipher import AES, PKCS1_OAEP
 SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 65433
 
+"""
+A file that implements secure key exchange and encrypted file transfer for the client.
+
+Attributes : 
+
+Methods : 
+main(): Connects to the server, exchanges keys, and decrypts the file.
+"""
+
 def main():
+    """Client logic to connect, receive keys, and decrypt file."""
+
     # Load private key
     with open("client_private.pem", "rb") as key_file:
         private_key = RSA.import_key(key_file.read())
@@ -14,7 +25,6 @@ def main():
     print("Connecting to the server...")
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((SERVER_HOST, SERVER_PORT))
-
     print("Connected to server.")
 
     # Send public key to server
@@ -36,6 +46,10 @@ def main():
     nonce = client_socket.recv(16)  # AES nonce is 16 bytes
     print("Nonce received.")
 
+    # Receive authentication tag
+    tag = client_socket.recv(16)  # 🔹 Required for AES-GCM verification
+    print("Tag received.")
+
     # Receive encrypted file
     encrypted_file_data = b""
     while True:
@@ -45,9 +59,11 @@ def main():
         encrypted_file_data += chunk
     print("Encrypted file received.")
 
-    # Decrypt the file
-    cipher_aes = AES.new(aes_key, AES.MODE_EAX, nonce=nonce)
-    plaintext = cipher_aes.decrypt(encrypted_file_data)
+    # Decrypt the file using AES-GCM
+    cipher_aes = AES.new(aes_key, AES.MODE_GCM, nonce=nonce)  # 🔹 Switched to GCM
+    plaintext = cipher_aes.decrypt_and_verify(encrypted_file_data, tag)  # 🔹 Uses tag for verification
+
+    # Print the decrypted message
     print(f"Decrypted message: {plaintext.decode()}")
 
     client_socket.close()
