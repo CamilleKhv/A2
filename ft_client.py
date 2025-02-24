@@ -47,7 +47,7 @@ def main():
     print("Nonce received.")
 
     # Receive authentication tag
-    tag = client_socket.recv(16)  # 🔹 Required for AES-GCM verification
+    tag = client_socket.recv(16)  # Required for AES-GCM verification
     print("Tag received.")
 
     # Receive encrypted file
@@ -60,8 +60,8 @@ def main():
     print("Encrypted file received.")
 
     # Decrypt the file using AES-GCM
-    cipher_aes = AES.new(aes_key, AES.MODE_GCM, nonce=nonce)  # 🔹 Switched to GCM
-    plaintext = cipher_aes.decrypt_and_verify(encrypted_file_data, tag)  # 🔹 Uses tag for verification
+    cipher_aes = AES.new(aes_key, AES.MODE_GCM, nonce=nonce) 
+    plaintext = cipher_aes.decrypt_and_verify(encrypted_file_data, tag)  # Uses tag for verification
 
     # Print the decrypted message
     print(f"Decrypted message: {plaintext.decode()}")
