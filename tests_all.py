@@ -5,7 +5,20 @@ import os
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES, PKCS1_OAEP
 
+"""
+A file that implements unit and system tests for secure key exchange and encrypted file transfer.
+
+Attributes : 
+
+Methods : 
+test_rsa_key_generation(): Tests RSA key pair generation.
+test_aes_key_encryption_decryption(): Tests AES key encryption and decryption.
+test_aes_file_encryption_decryption(): Tests AES-GCM encryption and decryption.
+test_end_to_end_file_transfer(): Tests the complete server-client interaction.
+"""
+
 class SecurityTests(unittest.TestCase):
+    """Unit tests for encryption and key exchange."""
 
     def test_rsa_key_generation(self):
         """Test RSA key pair generation."""
@@ -40,10 +53,10 @@ class SecurityTests(unittest.TestCase):
         self.assertEqual(plaintext, decrypted_text)
 
 class SystemTests(unittest.TestCase):
+    """System test for full client-server interaction."""
 
     def test_end_to_end_file_transfer(self):
         """Test the full server-client file transfer process."""
-
         # Start the server in a separate process
         server_process = subprocess.Popen(["python", "ft_server.py"])
         
@@ -62,5 +75,5 @@ class SystemTests(unittest.TestCase):
         # Stop the server after the test
         server_process.terminate()
 
-if __name__ == '__main__':
-    unittest.main()
+"""Main entry point to run the tests."""
+unittest.main()
