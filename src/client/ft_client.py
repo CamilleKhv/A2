@@ -19,15 +19,22 @@ Methods:
 - receive_encrypted_file(): Receives and decrypts an encrypted file.
 """
 
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def load_private_key(filename):
     """Loads the client's private RSA key from a file."""
-    with open(filename, "rb") as key_file:
+    key_path = os.path.join(BASE_DIR, filename)
+    with open(key_path, "rb") as key_file:
         return RSA.import_key(key_file.read())
 
 def load_public_key(filename):
     """Loads the client's public RSA key from a file."""
-    with open(filename, "rb") as key_file:
+    key_path = os.path.join(BASE_DIR, filename)
+    with open(key_path, "rb") as key_file:
         return key_file.read()
+
 
 def connect_to_server():
     """Establishes a connection with the server."""

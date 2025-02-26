@@ -1,91 +1,85 @@
 import unittest
 import subprocess
-import time
 import os
-from Crypto.PublicKey import RSA
-from Crypto.Cipher import AES, PKCS1_OAEP
+import time
 
-"""
-A file that implements unit and system tests for secure key exchange and encrypted file transfer.
+class TestSecureFileTransfer(unittest.TestCase):
+    SERVER_SCRIPT = "../server/ft_server.py"
+    CLIENT_SCRIPT = "../client/ft_client.py"
+    TEST_FILE = "../server/file_to_transfer.txt"
+    RECEIVED_FILE = "../client/received_file.txt"
 
-Attributes : 
-
-Methods : 
-test_rsa_key_generation(): Tests RSA key pair generation.
-test_aes_key_encryption_decryption(): Tests AES key encryption and decryption.
-test_aes_file_encryption_decryption(): Tests AES-GCM encryption and decryption.
-test_end_to_end_file_transfer(): Tests the complete server-client interaction with a file.
-"""
-
-class SecurityTests(unittest.TestCase):
-    """Unit tests for encryption and key exchange."""
-
-    def test_rsa_key_generation(self):
-        """Test RSA key pair generation."""
-        key = RSA.generate(2048)
-        self.assertIsNotNone(key)
-        self.assertIsNotNone(key.publickey())
-
-    def test_aes_key_encryption_decryption(self):
-        """Test AES key encryption and decryption with RSA."""
-        key = RSA.generate(2048)
-        rsa_cipher = PKCS1_OAEP.new(key.publickey())
-
-        aes_key = os.urandom(32)
-        encrypted_key = rsa_cipher.encrypt(aes_key)
-
-        rsa_decipher = PKCS1_OAEP.new(key)
-        decrypted_key = rsa_decipher.decrypt(encrypted_key)
-
-        self.assertEqual(aes_key, decrypted_key)
-
-    def test_aes_file_encryption_decryption(self):
-        """Test AES-GCM encryption and decryption."""
-        aes_key = os.urandom(32)
-        cipher = AES.new(aes_key, AES.MODE_GCM)
-        nonce = cipher.nonce
-        plaintext = b"Test message"
-        ciphertext, tag = cipher.encrypt_and_digest(plaintext)
-
-        decipher = AES.new(aes_key, AES.MODE_GCM, nonce=nonce)
-        decrypted_text = decipher.decrypt_and_verify(ciphertext, tag)
-
-        self.assertEqual(plaintext, decrypted_text)
-
-class SystemTests(unittest.TestCase):
-    """System test for full client-server interaction with a file."""
-
-    def test_end_to_end_file_transfer(self):
-        """Test the full server-client file transfer process with a file."""
-        test_filename = "test_file.txt"
-        received_filename = "received_file.txt"
+    @classmethod
+    def setUpClass(cls):
+        """Prepare test files before running the tests."""
+        print("\n🔹 Setting up test files...")
         
-        # Create a test file
-        with open(test_filename, "w") as f:
-            f.write("This is a test file for encryption.")
+        cls.test_content = b"This is a secret shhhh."
+        with open(cls.TEST_FILE, "wb") as f:
+            f.write(cls.test_content)
         
-        # Start the server in a separate process
-        server_process = subprocess.Popen(["python", "ft_server.py", test_filename])
+        print(f"✅ Test file '{cls.TEST_FILE}' created with content: {cls.test_content}")
+
+    @classmethod
+    def tearDownClass(cls):
+        """Clean up test files after tests."""
+        print("\n🔹 Cleaning up test files...")
         
-        # Give the server time to start
+        if os.path.exists(cls.RECEIVED_FILE):
+            os.remove(cls.RECEIVED_FILE)
+            print(f"✅ Deleted received file: {cls.RECEIVED_FILE}")
+        else:
+            print("⚠️ No received file found to delete.")
+
+    def test_file_transfer(self):
+        """Test if the file is correctly encrypted and decrypted."""
+        print("\n🚀 Starting secure file transfer test...")
+
+        # Start the server in the background
+        print("🔹 Launching server...")
+        server_process = subprocess.Popen(
+            ["python", self.SERVER_SCRIPT], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        
+        # Wait a bit to ensure the server is running
         time.sleep(2)
 
-        # Run the client to test file transfer
-        client_process = subprocess.run(["python", "ft_client.py", received_filename], capture_output=True, text=True)
+        # Start the client to trigger file transfer
+        print("🔹 Running client to start file transfer...")
+        client_process = subprocess.run(
+            ["python", self.CLIENT_SCRIPT], capture_output=True, text=True
+        )
 
         # Print client output for debugging
-        print(client_process.stdout)
+        print("📜 Client Output:\n", client_process.stdout)
+        if client_process.stderr:
+            print("⚠️ Client Errors:\n", client_process.stderr)
 
-        # Check if decryption was successful by comparing files
-        with open(test_filename, "r") as original, open(received_filename, "r") as received:
-            self.assertEqual(original.read(), received.read())
+        # Give some time for the transfer to complete
+        time.sleep(2)
 
-        # Clean up test files
-        os.remove(test_filename)
-        os.remove(received_filename)
-
-        # Stop the server after the test
+        # Stop the server
+        print("🔹 Stopping the server...")
         server_process.terminate()
+        server_process.wait()
 
-"""Main entry point to run the tests."""
-unittest.main()
+        # Check if the received file exists
+        print(f"🔹 Checking if received file '{self.RECEIVED_FILE}' exists...")
+        self.assertTrue(os.path.exists(self.RECEIVED_FILE), "❌ Received file does not exist.")
+        print("✅ Received file exists!")
+
+        # Compare original and received file contents
+        print("🔹 Comparing original and received file contents...")
+        with open(self.RECEIVED_FILE, "rb") as f:
+            received_content = f.read()
+
+        if received_content == self.test_content:
+            print("✅ File successfully transferred and decrypted!")
+        else:
+            print("❌ Decrypted file does not match original!")
+
+        self.assertEqual(received_content, self.test_content, "❌ Decrypted file does not match original.")
+
+if __name__ == '__main__':
+    print("\n🧪 Running Secure File Transfer Tests...\n")
+    unittest.main()
