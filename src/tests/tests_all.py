@@ -12,20 +12,19 @@ class TestSecureFileTransfer(unittest.TestCase):
     CLIENT_SCRIPT (str): Path to the client script.
     SERVER_FILE (str): Path to the file on the server to be transferred.
     CLIENT_DIR (str): Directory containing the client script.
-    RECEIVED_FILE (str): Path to the received file on the client side.
+    RECEIVED_FILE (str): Path to the received file in the tests directory.
 
     Methods:
     setUpClass(): Sets up the test environment, ensuring the server file exists.
     test_file_transfer(): Tests the secure file transfer process.
-    tearDownClass(): Cleans up test files after tests have run.
     """
 
     SERVER_SCRIPT = "../server/ft_server.py"
     CLIENT_SCRIPT = "../client/ft_client.py"
     SERVER_FILE = os.path.join(os.path.dirname(SERVER_SCRIPT), "file_to_transfer.txt")
     CLIENT_DIR = os.path.dirname(CLIENT_SCRIPT)
-    RECEIVED_FILE = os.path.join(CLIENT_DIR, "received_file.txt")
-
+    RECEIVED_FILE = os.path.join(os.path.dirname(__file__), "received_file.txt")  
+    
     @classmethod
     def setUpClass(cls):
         """
@@ -36,7 +35,7 @@ class TestSecureFileTransfer(unittest.TestCase):
         """
         print("Setting up test environment...")
 
-        # Ensure the server file exists, as it's needed for the test
+        # Ensure the server file exists before starting tests
         if not os.path.exists(cls.SERVER_FILE):
             raise FileNotFoundError(f"Server file not found: {cls.SERVER_FILE}")
 
@@ -49,7 +48,7 @@ class TestSecureFileTransfer(unittest.TestCase):
         This method:
         - Starts the server process.
         - Starts the client process to initiate the file transfer.
-        - Compares the content of the transferred file with the original.
+        - Compares the content of the transferred file with the original file on the server.
         
         Raises:
         AssertionError: If the transferred file does not match the original file.
@@ -71,32 +70,18 @@ class TestSecureFileTransfer(unittest.TestCase):
         if client_error:
             print("Client Errors:\n", client_error.decode(errors="ignore"))
 
-        # Terminate the server after the client has completed the transfer
+        # Terminate the server process after the client completes the transfer
         print("Stopping the server...")
         server_process.terminate()
         server_process.wait()
 
-        # Check if the received file exists in the client directory
+        # Check if the received file exists in the 'tests' directory
         print(f"Checking if received file exists: {self.RECEIVED_FILE}")
         self.assertTrue(os.path.exists(self.RECEIVED_FILE), "Received file does not exist.")
 
         # Compare the contents of the original file on the server and the received file on the client
         with open(self.SERVER_FILE, "rb") as f_sent, open(self.RECEIVED_FILE, "rb") as f_received:
             self.assertEqual(f_sent.read(), f_received.read(), "File contents do not match.")
-
-    @classmethod
-    def tearDownClass(cls):
-        """
-        Cleans up the test environment by deleting the received file in the client directory.
-        
-        This method ensures that the received file is deleted after the test completes.
-        """
-        print("Cleaning up test files...")
-        
-        # Delete the received file in the client directory if it exists
-        if os.path.exists(cls.RECEIVED_FILE):
-            os.remove(cls.RECEIVED_FILE)
-            print(f"Deleted received file: {cls.RECEIVED_FILE}")
 
 if __name__ == "__main__":
     unittest.main()
