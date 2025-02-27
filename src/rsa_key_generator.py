@@ -27,13 +27,25 @@ def generator_key(filename, key, is_private=False):
     if is_private:
         os.chmod(filename, 0o600)  # Restrict private key access
 
+# Specify directories for the server and client
+server_dir = os.path.join(os.getcwd(), "server")
+client_dir = os.path.join(os.getcwd(), "client")
+
+# Ensure the directories exist
+os.makedirs(server_dir, exist_ok=True)
+os.makedirs(client_dir, exist_ok=True)
+
 # Generate Server Key Pair
 server_key = RSA.generate(2048)
 server_private_key = server_key.export_key()
 server_public_key = server_key.publickey().export_key()
 
-generator_key("server_private.pem", server_private_key, is_private=True)
-generator_key("server_public.pem", server_public_key)
+# Save the server keys in the server directory
+server_private_key_path = os.path.join(server_dir, "server_private.pem")
+server_public_key_path = os.path.join(server_dir, "server_public.pem")
+
+generator_key(server_private_key_path, server_private_key, is_private=True)
+generator_key(server_public_key_path, server_public_key)
 
 print("Server keys generated and saved.")
 
@@ -42,7 +54,11 @@ client_key = RSA.generate(2048)
 client_private_key = client_key.export_key()
 client_public_key = client_key.publickey().export_key()
 
-generator_key("client_private.pem", client_private_key, is_private=True)
-generator_key("client_public.pem", client_public_key)
+# Save the client keys in the client directory
+client_private_key_path = os.path.join(client_dir, "client_private.pem")
+client_public_key_path = os.path.join(client_dir, "client_public.pem")
+
+generator_key(client_private_key_path, client_private_key, is_private=True)
+generator_key(client_public_key_path, client_public_key)
 
 print("Client keys generated and saved.")
