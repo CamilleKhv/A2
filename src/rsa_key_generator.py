@@ -16,11 +16,6 @@ generator_key(): creates the key to a file with appropriate permissions.
 def generator_key(filename, key, is_private=False):
     """
     Generates a file with a key in it and the permissions ensures that only the owner can read the private keys.
-    
-    Parameters :
-    filename (str): the name of the key.
-    key (bytes): export the key in binary form.
-    is_private (bool): private or public key.
     """
     with open(filename, "wb") as file:
         file.write(key)
