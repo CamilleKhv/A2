@@ -26,13 +26,22 @@ def setup_server():
     print(f"Server listening on {SERVER_HOST} {SERVER_PORT}...")
     return server_socket
 
+def handle_client(client_socket, private_key):
+    """Handles communication with a client."""
+    encryption_method = perform_handshake(client_socket)
+    
+    client_public_key = RSA.import_key(client_socket.recv(2048))
+    print("Client's public key received.")
+    
+    aes_key = exchange_keys(client_socket, client_public_key)
+    encrypt_and_send_file(client_socket, aes_key)
+    client_socket.close()
+
 def perform_handshake(client_socket):
     """Performs handshake to negotiate encryption method."""
     client_supported = client_socket.recv(1024).decode().split(',')
     chosen_method = next((method for method in SUPPORTED_ENCRYPTIONS if method in client_supported), None)
     if not chosen_method:
-        client_socket.sendall(b"ERROR: No common encryption method found!")
-        client_socket.close()
         raise ValueError("No common encryption method found!")
     client_socket.sendall(chosen_method.encode())
     print(f"Handshake successful. Agreed on encryption: {chosen_method}")
@@ -64,19 +73,11 @@ def encrypt_and_send_file(client_socket, aes_key):
     client_socket.sendall(ciphertext)
     print("Encrypted file sent.")
 
+"""Main entry point of the server."""
 private_key = load_private_key("server_private.pem")
 server_socket = setup_server()
 
 while True:
     client_socket, client_address = server_socket.accept()
     print(f"Client connected: {client_address}")
-    try:
-        encryption_method = perform_handshake(client_socket)
-        client_public_key = RSA.import_key(client_socket.recv(2048))
-        print("Client's public key received.")
-        aes_key = exchange_keys(client_socket, client_public_key)
-        encrypt_and_send_file(client_socket, aes_key)
-    except Exception as e:
-        print(f"Error handling client {client_address}: {e}")
-    finally:
-        client_socket.close()
+    handle_client(client_socket, private_key)
