@@ -4,8 +4,19 @@ from Crypto.Cipher import AES, PKCS1_OAEP
 import os
 
 """
-A file that implements secure key exchange and encrypted file transfer for the server,
-now including an explicit handshake for encryption method negotiation.
+A file that implements secure key exchange and encrypted file transfer.
+
+Attributes:
+SERVER_HOST (str): The server's host IP address.
+SERVER_PORT (int): The server's listening port.
+FILE_TO_SEND (str): The name of the file to send, which will be encrypted and transferred.
+
+Methods:
+- load_private_key(): Loads the server's private RSA key.
+- setup_server(): Configures and starts the server.
+- handle_client(): Manages communication with the client.
+- exchange_keys(): Exchanges RSA-encrypted AES keys.
+- encrypt_and_send_file(): Encrypts and sends a file securely.
 """
 
 SERVER_HOST = '127.0.0.1'
