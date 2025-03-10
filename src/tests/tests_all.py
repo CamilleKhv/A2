@@ -23,11 +23,11 @@ class TestSecureFileTransfer(unittest.TestCase):
     test_file_integrity(): Confirms that the received file has not been tampered with.
     """
 
-    SERVER_SCRIPT = "../server/ft_server.py"
-    CLIENT_SCRIPT = "../client/ft_client.py"
-    SERVER_FILE = os.path.join(os.path.dirname(SERVER_SCRIPT), "file_to_transfer.txt")
-    CLIENT_DIR = os.path.dirname(CLIENT_SCRIPT)
-    RECEIVED_FILE = os.path.join(os.path.dirname(__file__), "received_file.txt")  
+    SERVER_SCRIPT = "../server/ft_server.py"  # Path to the server script
+    CLIENT_SCRIPT = "../client/ft_client.py"  # Path to the client script
+    SERVER_FILE = os.path.join(os.path.dirname(SERVER_SCRIPT), "file_to_transfer.txt")  # Path to file to send
+    CLIENT_DIR = os.path.dirname(CLIENT_SCRIPT)  # Client directory
+    RECEIVED_FILE = os.path.join(os.path.dirname(__file__), "received_file.txt")  # Path to the received file
 
     @classmethod
     def setUpClass(cls):
@@ -46,7 +46,7 @@ class TestSecureFileTransfer(unittest.TestCase):
         server_process = subprocess.Popen(
             ["python", self.SERVER_SCRIPT], stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-        time.sleep(2)  # Allow time for the server to start
+        time.sleep(5)  # Allow extra time for the server to initialize and be ready
         return server_process
 
     def run_client(self):
@@ -91,7 +91,7 @@ class TestSecureFileTransfer(unittest.TestCase):
         server_process.terminate()
         server_process.wait()
 
-        # Check that AES key was received and decrypted correctly
+        # Check if the client receives the AES key (adjust based on your client-server implementation)
         self.assertIn("AES key received", client_output, "Client did not receive AES key.")
         self.assertIn("AES key decrypted", client_output, "AES key decryption failed.")
 
@@ -104,7 +104,7 @@ class TestSecureFileTransfer(unittest.TestCase):
         server_process.terminate()
         server_process.wait()
 
-        # Check that encryption & decryption steps were successful
+        # Check if the encrypted file was received and decrypted
         self.assertIn("Encrypted file received", client_output, "Client did not receive encrypted file.")
         self.assertIn("Decrypted file saved", client_output, "Decryption process failed.")
 
