@@ -15,6 +15,7 @@ Methods:
 - load_private_key(): Loads the client's private RSA key.
 - load_public_key(): Loads the client's public RSA key.
 - connect_to_server(): Establishes a connection with the server.
+- perform_handshake(): Negotiates encryption method.
 - exchange_keys(): Sends public key to server and receives AES key.
 - receive_encrypted_file(): Receives and decrypts an encrypted file.
 """
@@ -23,77 +24,71 @@ SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 65433
 OUTPUT_FILE = "received_file.txt"  # The decrypted file will be saved as this
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Base directory of the script
-
+ENCRYPTION_METHOD = "AES-GCM"
 
 def load_private_key(filename):
     """Loads the client's private RSA key from a file."""
-    key_path = os.path.join(BASE_DIR, filename)  # Get the path to the private key file
+    key_path = os.path.join(BASE_DIR, filename)
     with open(key_path, "rb") as key_file:
-        return RSA.import_key(key_file.read())  # Import and return the RSA private key
+        return RSA.import_key(key_file.read())
 
 def load_public_key(filename):
     """Loads the client's public RSA key from a file."""
-    key_path = os.path.join(BASE_DIR, filename)  # Get the path to the public key file
+    key_path = os.path.join(BASE_DIR, filename)
     with open(key_path, "rb") as key_file:
-        return key_file.read()  # Return the public key as bytes
+        return key_file.read()
 
 def connect_to_server():
     """Establishes a connection with the server."""
     print("Connecting to the server...")
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Create a TCP/IP socket
-    client_socket.connect((SERVER_HOST, SERVER_PORT))  # Connect to the server
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((SERVER_HOST, SERVER_PORT))
     print("Connected to server.")
-    return client_socket  # Return the socket object
+    return client_socket
+
+def perform_handshake(client_socket):
+    """Negotiates encryption method with the server."""
+    client_socket.send(ENCRYPTION_METHOD.encode())
+    response = client_socket.recv(1024).decode()
+    if response != ENCRYPTION_METHOD:
+        raise ValueError("Encryption method mismatch!")
+    print("Encryption method agreed upon.")
 
 def exchange_keys(client_socket, private_key):
     """Sends public key to the server and receives the AES key."""
-    public_key = load_public_key("client_public.pem")  # Load the client's public key
-    client_socket.send(public_key)  # Send public key to the server
+    public_key = load_public_key("client_public.pem")
+    client_socket.send(public_key)
     print("Public key sent to server.")
-
-    # Receive and decrypt AES key
-    encrypted_aes_key = client_socket.recv(256)  # Receive the encrypted AES key
+    encrypted_aes_key = client_socket.recv(256)
     print(f"AES key received: {len(encrypted_aes_key)} bytes.")
-
-    rsa_cipher = PKCS1_OAEP.new(private_key)  # Initialize the RSA cipher with the private key
-    aes_key = rsa_cipher.decrypt(encrypted_aes_key)  # Decrypt the AES key using the RSA cipher
+    rsa_cipher = PKCS1_OAEP.new(private_key)
+    aes_key = rsa_cipher.decrypt(encrypted_aes_key)
     print("AES key decrypted.")
-
-    return aes_key  # Return the decrypted AES key
+    return aes_key
 
 def receive_encrypted_file(client_socket, aes_key):
     """Receives and decrypts an encrypted file from the server."""
-    nonce = client_socket.recv(16)  # Receive the nonce used for AES-GCM encryption
+    nonce = client_socket.recv(16)
     print("Nonce received.")
-
-    tag = client_socket.recv(16)  # Receive the authentication tag for AES-GCM
+    tag = client_socket.recv(16)
     print("Tag received.")
-
-    # Receive file size first
-    file_size = int.from_bytes(client_socket.recv(4), 'big')  # Receive the size of the file as a 4-byte integer
-
-    encrypted_file_data = b""  # Initialize an empty byte string to hold the encrypted file data
+    file_size = int.from_bytes(client_socket.recv(4), 'big')
+    encrypted_file_data = b""
     while len(encrypted_file_data) < file_size:
-        chunk = client_socket.recv(min(4096, file_size - len(encrypted_file_data)))  # Receive file data in chunks
+        chunk = client_socket.recv(min(4096, file_size - len(encrypted_file_data)))
         if not chunk:
             break
-        encrypted_file_data += chunk  # Add the received chunk to the encrypted data
+        encrypted_file_data += chunk
     print("Encrypted file received.")
-
-    # Decrypt using AES-GCM
-    cipher_aes = AES.new(aes_key, AES.MODE_GCM, nonce=nonce)  # Initialize AES cipher in GCM mode with nonce
-    plaintext = cipher_aes.decrypt_and_verify(encrypted_file_data, tag)  # Decrypt and verify the file data using the tag
-
-    # Save decrypted content to a file
+    cipher_aes = AES.new(aes_key, AES.MODE_GCM, nonce=nonce)
+    plaintext = cipher_aes.decrypt_and_verify(encrypted_file_data, tag)
     with open(OUTPUT_FILE, "wb") as f:
-        f.write(plaintext)  # Write the decrypted content to the output file
+        f.write(plaintext)
     print(f"Decrypted file saved as: {OUTPUT_FILE}")
 
-"""Main entry point of the client."""
-private_key = load_private_key("client_private.pem")  # Load the client's private key
-client_socket = connect_to_server()  # Establish a connection to the server
-
-aes_key = exchange_keys(client_socket, private_key)  # Exchange keys with the server
-receive_encrypted_file(client_socket, aes_key)  # Receive and decrypt the encrypted file
-
-client_socket.close()  # Close the connection to the server
+private_key = load_private_key("client_private.pem")
+client_socket = connect_to_server()
+perform_handshake(client_socket)
+aes_key = exchange_keys(client_socket, private_key)
+receive_encrypted_file(client_socket, aes_key)
+client_socket.close()
