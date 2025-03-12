@@ -64,7 +64,7 @@ python ft_client.py
 The client will connect to the server and begin the file transfer process. A new file, received_file.txt, will appear in the src/client/ directory. This file will be identical to the file_to_transfer.txt from the server.
 
 ### 4. Test the File Transfer
-Run the unit tests to ensure the secure file transfer works as expected. This will automatically launch both the server and client scripts for testing.
+Run the unit tests to ensure the secure file transfer works as expected. The server and the client code must be runned in different terminal before running the test code in a third terminal with these commands.
 ```
 cd src/tests
 python tests_all.py
@@ -72,6 +72,7 @@ python tests_all.py
 
 ## Unit Tests Verify:
 
-- Integrity and authenticity of transferred files.
-- Proper encryption and decryption of files.
-- Correct communication between server and client.
+- Integrity and authenticity of transferred files using SHA-256 hashing.
+- Proper encryption and decryption of files, ensuring they remain unaltered.
+- Correct communication between server and client, including secure key exchange.
+- Detection of potential failures such as key exchange issues or corrupted transfers.
