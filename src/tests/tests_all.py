@@ -13,14 +13,16 @@ class TestSecureFileTransfer(unittest.TestCase):
     CLIENT_SCRIPT (str): Path to the client script.
     SERVER_FILE (str): Path to the file on the server to be transferred.
     CLIENT_DIR (str): Directory containing the client script.
-    RECEIVED_FILE (str): Path to the received file in the tests directory.
+    RECEIVED_FILE (str): Path to the received file in the tests directory, used to verify successful transfer.
 
     Methods:
-    setUpClass(): Sets up the test environment, ensuring the server file exists.
-    test_file_transfer(): Tests the secure file transfer process.
-    test_key_exchange(): Validates that key exchange between client and server works.
-    test_encryption_decryption(): Ensures encryption and decryption are correct.
-    test_file_integrity(): Confirms that the received file has not been tampered with.
+    setUpClass(): Sets up the test environment, ensuring the server file exists before running tests.
+    start_server(): Launches the server in a subprocess and waits for it to initialize.
+    run_client(): Runs the client in a subprocess and retrieves its output.
+    test_file_transfer(): Verifies that the file is successfully transferred and matches the original.
+    test_key_exchange(): Ensures secure AES key exchange between client and server.
+    test_encryption_decryption(): Confirms that encrypted data is properly decrypted without data loss.
+    test_file_integrity(): Validates file integrity using SHA-256 hashing to detect tampering.
     """
 
     SERVER_SCRIPT = "../server/ft_server.py"  # Path to the server script
