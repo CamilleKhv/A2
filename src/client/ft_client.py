@@ -24,7 +24,7 @@ SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 65433
 OUTPUT_FILE = "received_file.txt"  # The decrypted file will be saved as this
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Base directory of the script
-SUPPORTED_ENCRYPTIONS = ["AES-GCM"]  # List of supported encryption methods
+SUPPORTED_ENCRYPTIONS = ["AES-GCM", "ChaCha20-Poly1305"]  # List of supported encryption methods
 
 def load_private_key(filename):
     """Loads the client's private RSA key from a file."""
@@ -49,13 +49,9 @@ def connect_to_server():
 def perform_handshake(client_socket):
     """Negotiates encryption method with the server."""
     # Send the list of supported encryption methods (only one method in the list)
-    client_socket.send(",".join(SUPPORTED_ENCRYPTIONS).encode())
-    response = client_socket.recv(1024).decode()
-    
-    # Check if the server supports any encryption method from the list
-    if response not in SUPPORTED_ENCRYPTIONS:
-        raise ValueError("Encryption method mismatch or unsupported!")
-    print(f"Encryption method {response} agreed upon.")
+    client_socket.sendall(SUPPORTED_ENCRYPTIONS.encode())
+    chosen_algo = client_socket.recv(1024).decode()
+    print(f"Algo selected : {chosen_algo}")
 
 def exchange_keys(client_socket, private_key):
     """Sends public key to the server and receives the AES key."""

@@ -22,7 +22,6 @@ Methods:
 SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 65433
 FILE_TO_SEND = "file_to_transfer.txt"
-SUPPORTED_ENCRYPTIONS = ["AES-GCM"]  # List of supported encryption methods
 
 def load_private_key(filename):
     """Loads the server's private RSA key from a file."""
@@ -50,13 +49,18 @@ def handle_client(client_socket, private_key):
 
 def perform_handshake(client_socket):
     """Performs handshake to negotiate encryption method."""
-    client_supported = client_socket.recv(1024).decode().split(',')
-    chosen_method = next((method for method in SUPPORTED_ENCRYPTIONS if method in client_supported), None)
-    if not chosen_method:
-        raise ValueError("No common encryption method found!")
-    client_socket.sendall(chosen_method.encode())
-    print(f"Handshake successful. Agreed on encryption: {chosen_method}")
-    return chosen_method
+    supported_algos = client_socket.recv(1024).decode().split(",")
+    #Choice of algorithm
+    if "AES-GCM" in supported_algos:
+        chosen_algo = "AES-GCM"
+    elif "ChaCha20-Poly1305" in supported_algos:
+        chosen_algo = "ChaCha20-Poly1305"
+    else:
+        print("None algorithm found. Close")
+        client_socket.close()
+        return
+    #Send selection
+    client_socket.sendall(chosen_algo.encode())
 
 def exchange_keys(client_socket, client_public_key):
     """Generates and sends an AES key encrypted with the client's public key."""

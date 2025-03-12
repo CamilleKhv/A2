@@ -105,8 +105,11 @@ class TestSecureFileTransfer(unittest.TestCase):
         server_process.wait()
 
         # Check if the encrypted file was received and decrypted
-        self.assertIn("Encrypted file received", client_output, "Client did not receive encrypted file.")
-        self.assertIn("Decrypted file saved", client_output, "Decryption process failed.")
+        self.assertTrue(os.path.exists(self.RECEIVED_FILE), "The received file does not exist")
+
+        #Check if teh received file matches teh sended file after decryption
+        with open(self.SERVER_FILE, "rb") as f_sent, open(self.RECEIVED_FILE, "rb") as f_received:
+            self.assertEqual(f_sent.read(), f_received.read(), "The received file does not match after decryption")
 
     def test_file_integrity(self):
         """Validates that the received file matches the original using SHA-256 hashing."""
