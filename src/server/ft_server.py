@@ -15,6 +15,7 @@ Methods:
 - load_private_key(): Loads the server's private RSA key.
 - setup_server(): Configures and starts the server.
 - handle_client(): Manages communication with the client.
+- perform_handshake(): Negotiates encryption method.
 - exchange_keys(): Exchanges RSA-encrypted AES keys.
 - encrypt_and_send_file(): Encrypts and sends a file securely.
 """

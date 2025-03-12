@@ -10,6 +10,7 @@ Attributes:
 SERVER_HOST (str): The server's host IP address.
 SERVER_PORT (int): The server's listening port.
 OUTPUT_FILE (str): The name of the file to save the decrypted content.
+SUPPORTED_ENCRYPTIONS (list): List of supported encryption methods.
 
 Methods:
 - load_private_key(): Loads the client's private RSA key.
