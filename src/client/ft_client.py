@@ -49,8 +49,9 @@ def connect_to_server():
 
 def perform_handshake(client_socket):
     """Negotiates encryption method with the server."""
-    # Send the list of supported encryption methods (only one method in the list)
-    client_socket.sendall(SUPPORTED_ENCRYPTIONS.encode())
+    # Convert the list to a comma-separated string
+    supported_encryption_str = ",".join(SUPPORTED_ENCRYPTIONS)
+    client_socket.sendall(supported_encryption_str.encode())  # Send as bytes
     chosen_algo = client_socket.recv(1024).decode()
     print(f"Algo selected : {chosen_algo}")
 
